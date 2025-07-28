@@ -1,0 +1,44 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: traefik-ubuntu
+    image: ubuntu:22.04
+    pre_build_image: true
+    privileged: true
+    command: /lib/systemd/systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    tmpfs:
+      - /run
+      - /tmp
+    capabilities:
+      - SYS_ADMIN
+    groups:
+      - debian_family
+  - name: traefik-debian
+    image: debian:12
+    pre_build_image: true
+    privileged: true
+    command: /lib/systemd/systemd
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    tmpfs:
+      - /run
+      - /tmp
+    capabilities:
+      - SYS_ADMIN
+    groups:
+      - debian_family
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      debian_family:
+        ansible_python_interpreter: /usr/bin/python3
+verifier:
+  name: ansible

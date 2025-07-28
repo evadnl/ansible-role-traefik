@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for traefik
+
+- name: reload systemd
+  systemd:
+    daemon_reload: true
+
+- name: restart traefik
+  systemd:
+    name: traefik
+    state: restarted

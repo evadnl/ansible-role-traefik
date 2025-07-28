@@ -1,0 +1,91 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for traefik
+
+- name: Ensure traefik group exists
+  group:
+    name: "{{ traefik_group }}"
+    system: true
+    state: present
+
+- name: Ensure traefik user exists
+  user:
+    name: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ traefik_home_dir }}"
+    create_home: false
+    state: present
+
+- name: Create traefik directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0755'
+  loop:
+    - "{{ traefik_home_dir }}"
+    - "{{ traefik_config_dir }}"
+    - "{{ traefik_data_dir }}"
+    - "{{ traefik_log_dir }}"
+
+- name: Check if traefik binary exists and get version
+  command: "{{ traefik_binary_path }} version"
+  register: traefik_current_version
+  failed_when: false
+  changed_when: false
+
+- name: Download traefik binary
+  get_url:
+    url: "https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_linux_{{ traefik_architecture }}.tar.gz"
+    dest: "/tmp/traefik_v{{ traefik_version }}_linux_{{ traefik_architecture }}.tar.gz"
+    mode: '0644'
+  when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
+
+- name: Extract traefik binary
+  unarchive:
+    src: "/tmp/traefik_v{{ traefik_version }}_linux_{{ traefik_architecture }}.tar.gz"
+    dest: "/tmp"
+    remote_src: true
+    creates: "/tmp/traefik"
+  when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
+
+- name: Install traefik binary
+  copy:
+    src: "/tmp/traefik"
+    dest: "{{ traefik_binary_path }}"
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: true
+  when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
+  notify: restart traefik
+
+- name: Clean up downloaded files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/traefik_v{{ traefik_version }}_linux_{{ traefik_architecture }}.tar.gz"
+    - "/tmp/traefik"
+  when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
+
+- name: Create traefik systemd service file
+  template:
+    src: traefik.service.j2
+    dest: /etc/systemd/system/traefik.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart traefik
+
+- name: Enable and start traefik service
+  systemd:
+    name: traefik
+    enabled: "{{ traefik_service_enabled }}"
+    state: "{{ traefik_service_state }}"
+    daemon_reload: true

@@ -1,0 +1,82 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Check if traefik user exists
+      user:
+        name: traefik
+        state: present
+      check_mode: true
+      register: user_check
+      failed_when: user_check.changed
+
+    - name: Check if traefik group exists
+      group:
+        name: traefik
+        state: present
+      check_mode: true
+      register: group_check
+      failed_when: group_check.changed
+
+    - name: Verify traefik directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+      check_mode: true
+      register: dir_check
+      failed_when: dir_check.changed
+      loop:
+        - /opt/traefik
+        - /etc/traefik
+        - /var/lib/traefik
+        - /var/log/traefik
+
+    - name: Check if traefik binary is installed
+      stat:
+        path: /usr/local/bin/traefik
+      register: binary_stat
+      failed_when: not binary_stat.stat.exists
+
+    - name: Verify traefik binary is executable
+      file:
+        path: /usr/local/bin/traefik
+        mode: '0755'
+      check_mode: true
+      register: binary_perms
+      failed_when: binary_perms.changed
+
+    - name: Check traefik version
+      command: /usr/local/bin/traefik version
+      register: version_output
+      changed_when: false
+      failed_when: "'3.1.7' not in version_output.stdout"
+
+    - name: Verify systemd service file exists
+      stat:
+        path: /etc/systemd/system/traefik.service
+      register: service_file
+      failed_when: not service_file.stat.exists
+
+    - name: Check if traefik service is enabled
+      systemd:
+        name: traefik
+        enabled: true
+      check_mode: true
+      register: service_enabled
+      failed_when: service_enabled.changed
+
+    - name: Check if traefik service is running
+      systemd:
+        name: traefik
+        state: started
+      check_mode: true
+      register: service_running
+      failed_when: service_running.changed
+
+    - name: Verify traefik service status
+      command: systemctl is-active traefik
+      register: service_status
+      changed_when: false
+      failed_when: service_status.stdout != "active"
