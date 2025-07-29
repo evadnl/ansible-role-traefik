@@ -5,7 +5,7 @@ driver:
   name: docker
 platforms:
   - name: traefik-ubuntu
-    image: ubuntu:22.04
+    image: geerlingguy/docker-ubuntu2204-ansible
     pre_build_image: true
     privileged: true
     command: /lib/systemd/systemd
@@ -20,7 +20,7 @@ platforms:
     groups:
       - debian_family
   - name: traefik-debian
-    image: debian:12
+    image: geerlingguy/docker-debian12-ansible
     pre_build_image: true
     privileged: true
     command: /lib/systemd/systemd
