@@ -1,5 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 galaxy_info:
+  role_name: traefik
+  namespace: evad
   author: Dave Küppers
   description: Ansible role to install and configure Traefik reverse proxy on Debian-based systems
   
