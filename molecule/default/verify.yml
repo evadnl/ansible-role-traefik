@@ -111,7 +111,7 @@
         method: GET
         status_code: 200
       register: api_response
-      when: 
+      when:
         - api_port_check is succeeded
         - traefik_api_insecure | default(true) | bool
       ignore_errors: true
@@ -122,7 +122,7 @@
         method: GET
         status_code: 200
       register: dashboard_response
-      when: 
+      when:
         - api_port_check is succeeded
         - traefik_api_insecure | default(true) | bool
       ignore_errors: true
