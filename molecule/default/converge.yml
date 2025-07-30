@@ -21,7 +21,7 @@
       when: ansible_os_family == "Debian"
 
   roles:
-    - role: traefik
+    - role: evad.traefik
       traefik_version: "3.1.7"
       traefik_service_enabled: true
       traefik_service_state: "started"
