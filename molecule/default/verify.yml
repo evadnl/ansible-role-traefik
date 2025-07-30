@@ -80,3 +80,74 @@
       register: service_status
       changed_when: false
       failed_when: service_status.stdout != "active"
+
+    - name: Verify traefik.yaml configuration file exists
+      stat:
+        path: /etc/traefik/traefik.yaml
+      register: config_file
+      failed_when: not config_file.stat.exists
+
+    - name: Verify traefik.yaml has correct ownership
+      file:
+        path: /etc/traefik/traefik.yaml
+        owner: traefik
+        group: traefik
+        mode: '0644'
+      check_mode: true
+      register: config_perms
+      failed_when: config_perms.changed
+
+    - name: Wait for traefik to be fully started
+      wait_for:
+        port: 8080
+        host: "127.0.0.1"
+        timeout: 30
+      ignore_errors: true
+      register: api_port_check
+
+    - name: Test traefik API dashboard accessibility (insecure mode)
+      uri:
+        url: "http://127.0.0.1:8080/api/overview"
+        method: GET
+        status_code: 200
+      register: api_response
+      when: 
+        - api_port_check is succeeded
+        - traefik_api_insecure | default(true) | bool
+      ignore_errors: true
+
+    - name: Test traefik dashboard web interface (insecure mode)
+      uri:
+        url: "http://127.0.0.1:8080/dashboard/"
+        method: GET
+        status_code: 200
+      register: dashboard_response
+      when: 
+        - api_port_check is succeeded
+        - traefik_api_insecure | default(true) | bool
+      ignore_errors: true
+
+    - name: Verify traefik is listening on web entrypoint
+      wait_for:
+        port: 80
+        host: "0.0.0.0"
+        timeout: 10
+      ignore_errors: true
+      register: web_port_check
+
+    - name: Verify traefik is listening on websecure entrypoint
+      wait_for:
+        port: 443
+        host: "0.0.0.0"
+        timeout: 10
+      ignore_errors: true
+      register: websecure_port_check
+
+    - name: Display connectivity test results
+      debug:
+        msg:
+          - "API Port (8080): {{ 'PASS' if api_port_check is succeeded else 'FAIL' }}"
+          - "Web Port (80): {{ 'PASS' if web_port_check is succeeded else 'FAIL' }}"
+          - "WebSecure Port (443): {{ 'PASS' if websecure_port_check is succeeded else 'FAIL' }}"
+          - "API Dashboard: {{ 'PASS' if api_response is succeeded else 'SKIP' if not (traefik_api_insecure | default(true) | bool) else 'FAIL' }}"
+          - "Dashboard Web Interface: {{ 'PASS' if dashboard_response is succeeded else 'SKIP' if not (traefik_api_insecure | default(true) | bool) else 'FAIL' }}"
