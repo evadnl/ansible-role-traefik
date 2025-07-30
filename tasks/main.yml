@@ -72,6 +72,15 @@
     - "/tmp/traefik"
   when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
 
+- name: Create traefik configuration file
+  template:
+    src: ../files/template-traefik-yaml.j2
+    dest: "{{ traefik_config_dir }}/traefik.yaml"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0644'
+  notify: restart traefik
+
 - name: Create traefik systemd service file
   template:
     src: traefik.service.j2

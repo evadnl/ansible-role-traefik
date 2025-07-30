@@ -1,0 +1,52 @@
+global:
+  sendanonymoususage: {{ traefik_global_send_anonymous_usage | lower }}
+  checknewversion: {{ traefik_global_check_new_version | lower }}
+
+log:
+  level: {{ traefik_log_level }}
+
+api:
+  dashboard: {{ traefik_api_dashboard | lower }}
+  insecure: {{ traefik_api_insecure | lower }}
+
+entryPoints:
+{% if traefik_entrypoint_web_enabled %}
+  web:
+    address: ":{{ traefik_entrypoint_web_port }}"
+{% endif %}
+{% if traefik_entrypoint_websecure_enabled %}
+  websecure:
+    address: ":{{ traefik_entrypoint_websecure_port }}"
+{% endif %}
+
+providers:
+{% if traefik_provider_docker_enabled %}
+  docker:
+    exposedByDefault: {{ traefik_provider_docker_exposed_by_default | lower }}
+    watch: {{ traefik_provider_docker_watch | lower }}
+    endpoint: '{{ traefik_provider_docker_endpoint }}'
+{% endif %}
+{% if traefik_provider_file_enabled %}
+  file:
+    directory: '{{ traefik_provider_file_directory }}'
+    watch: {{ traefik_provider_file_watch | lower }}
+{% endif %}
+
+{% if traefik_certificate_resolvers_enabled %}
+certificatesResolvers:
+{% for resolver_name, resolver_config in traefik_certificate_resolvers.items() %}
+  {{ resolver_name }}:
+    acme:
+      email: {{ resolver_config.email }}
+      storage: {{ resolver_config.storage }}
+      caServer: {{ resolver_config.ca_server | default('https://acme-v02.api.letsencrypt.org/directory') }}
+{% if resolver_config.dns_challenge is defined %}
+      dnsChallenge:
+        provider: {{ resolver_config.dns_challenge.provider }}
+        resolvers:
+{% for resolver in resolver_config.dns_challenge.resolvers %}
+          - "{{ resolver }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
