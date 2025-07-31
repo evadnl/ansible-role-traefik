@@ -57,7 +57,7 @@
       command: getcap /usr/local/bin/traefik
       register: capability_output
       changed_when: false
-      failed_when: "'cap_net_bind_service+ep' not in capability_output.stdout"
+      failed_when: "'cap_net_bind_service=ep' not in capability_output.stdout"
 
     - name: Verify systemd service file exists
       stat:

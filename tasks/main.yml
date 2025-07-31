@@ -65,11 +65,12 @@
 
 - name: Set capability for traefik binary to bind to privileged ports
   shell: |
-    if ! getcap "{{ traefik_binary_path }}" | grep -q "cap_net_bind_service+ep"; then
+    if ! getcap "{{ traefik_binary_path }}" | grep -q "cap_net_bind_service=ep"; then
       setcap cap_net_bind_service=+ep "{{ traefik_binary_path }}"
+      echo "setcap executed"
     fi
   register: capability_result
-  changed_when: capability_result.rc == 0 and "setcap" in capability_result.stdout
+  changed_when: capability_result.stdout is defined and "setcap executed" in capability_result.stdout
 
 - name: Clean up downloaded files
   file:
@@ -82,7 +83,7 @@
 
 - name: Create traefik configuration file
   template:
-    src: ../files/template-traefik-yaml.j2
+    src: ../templates/template-traefik-yaml.j2
     dest: "{{ traefik_config_dir }}/traefik.yaml"
     owner: "{{ traefik_user }}"
     group: "{{ traefik_group }}"
