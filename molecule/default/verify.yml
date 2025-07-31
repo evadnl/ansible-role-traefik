@@ -53,6 +53,12 @@
       changed_when: false
       failed_when: "'3.1.7' not in version_output.stdout"
 
+    - name: Verify traefik binary has cap_net_bind_service capability
+      command: getcap /usr/local/bin/traefik
+      register: capability_output
+      changed_when: false
+      failed_when: "'cap_net_bind_service+ep' not in capability_output.stdout"
+
     - name: Verify systemd service file exists
       stat:
         path: /etc/systemd/system/traefik.service

@@ -63,6 +63,12 @@
   when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
   notify: restart traefik
 
+- name: Set capability for traefik binary to bind to privileged ports
+  capabilities:
+    path: "{{ traefik_binary_path }}"
+    capability: cap_net_bind_service=+ep
+    state: present
+
 - name: Clean up downloaded files
   file:
     path: "{{ item }}"
@@ -91,6 +97,14 @@
   notify:
     - reload systemd
     - restart traefik
+
+- name: Configure logrotate for traefik logs
+  template:
+    src: traefik-logrotate.j2
+    dest: /etc/logrotate.d/traefik
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Enable and start traefik service
   systemd:
