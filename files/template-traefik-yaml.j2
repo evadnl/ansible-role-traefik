@@ -4,6 +4,7 @@ global:
 
 log:
   level: {{ traefik_log_level }}
+  filePath: "{{ traefik_log_dir }}/traefik.log"
 
 api:
   dashboard: {{ traefik_api_dashboard | lower }}

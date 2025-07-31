@@ -1,0 +1,13 @@
+{{ traefik_log_dir }}/*.log {
+    daily
+    missingok
+    size 100M
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 644 {{ traefik_user }} {{ traefik_group }}
+    postrotate
+        /bin/systemctl reload traefik.service > /dev/null 2>&1 || true
+    endscript
+}
