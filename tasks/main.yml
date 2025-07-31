@@ -63,6 +63,15 @@
   when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
   notify: restart traefik
 
+- name: Set capability for traefik binary to bind to privileged ports
+  shell: |
+    if ! getcap "{{ traefik_binary_path }}" | grep -q "cap_net_bind_service=ep"; then
+      setcap cap_net_bind_service=+ep "{{ traefik_binary_path }}"
+      echo "setcap executed"
+    fi
+  register: capability_result
+  changed_when: capability_result.stdout is defined and "setcap executed" in capability_result.stdout
+
 - name: Clean up downloaded files
   file:
     path: "{{ item }}"
@@ -71,6 +80,15 @@
     - "/tmp/traefik_v{{ traefik_version }}_linux_{{ traefik_architecture }}.tar.gz"
     - "/tmp/traefik"
   when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
+
+- name: Create traefik configuration file
+  template:
+    src: ../templates/template-traefik-yaml.j2
+    dest: "{{ traefik_config_dir }}/traefik.yaml"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0644'
+  notify: restart traefik
 
 - name: Create traefik systemd service file
   template:
@@ -82,6 +100,14 @@
   notify:
     - reload systemd
     - restart traefik
+
+- name: Configure logrotate for traefik logs
+  template:
+    src: traefik-logrotate.j2
+    dest: /etc/logrotate.d/traefik
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Enable and start traefik service
   systemd:
