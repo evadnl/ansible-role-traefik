@@ -64,10 +64,12 @@
   notify: restart traefik
 
 - name: Set capability for traefik binary to bind to privileged ports
-  capabilities:
-    path: "{{ traefik_binary_path }}"
-    capability: cap_net_bind_service=+ep
-    state: present
+  shell: |
+    if ! getcap "{{ traefik_binary_path }}" | grep -q "cap_net_bind_service+ep"; then
+      setcap cap_net_bind_service=+ep "{{ traefik_binary_path }}"
+    fi
+  register: capability_result
+  changed_when: capability_result.rc == 0 and "setcap" in capability_result.stdout
 
 - name: Clean up downloaded files
   file:
