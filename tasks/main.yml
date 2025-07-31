@@ -63,15 +63,6 @@
   when: traefik_current_version.rc != 0 or traefik_version not in traefik_current_version.stdout
   notify: restart traefik
 
-- name: Set capability for traefik binary to bind to privileged ports
-  shell: |
-    if ! getcap "{{ traefik_binary_path }}" | grep -q "cap_net_bind_service=ep"; then
-      setcap cap_net_bind_service=+ep "{{ traefik_binary_path }}"
-      echo "setcap executed"
-    fi
-  register: capability_result
-  changed_when: capability_result.stdout is defined and "setcap executed" in capability_result.stdout
-
 - name: Clean up downloaded files
   file:
     path: "{{ item }}"
