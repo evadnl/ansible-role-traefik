@@ -24,6 +24,7 @@ traefik_user: "traefik"                     # System user for Traefik
 traefik_group: "traefik"                    # System group for Traefik
 traefik_home_dir: "/opt/traefik"             # Traefik home directory
 traefik_config_dir: "/etc/traefik"          # Configuration directory
+traefik_certs_dir: "/etc/traefik/certs"     # Certificates directory
 traefik_data_dir: "/var/lib/traefik"        # Data directory
 traefik_log_dir: "/var/log/traefik"         # Log directory
 traefik_binary_path: "/usr/local/bin/traefik" # Binary installation path
@@ -122,7 +123,8 @@ traefik_certificate_resolvers_enabled: true # Enable certificate resolvers
 traefik_certificate_resolvers:              # Certificate resolver configuration
   cloudflare:
     email: "email@example.com"              # ACME email address
-    storage: "/certs/acme.json"             # Certificate storage path
+    CLOUDFLARE_DNS_API_TOKEN: ""            # Cloudflare DNS API token (see Security section)
+    storage: "{{ traefik_certs_dir }}/acme.json" # Certificate storage path
     ca_server: "https://acme-v02.api.letsencrypt.org/directory" # ACME CA server
     dns_challenge:
       provider: "cloudflare"                # DNS challenge provider
@@ -134,6 +136,29 @@ traefik_certificate_resolvers:              # Certificate resolver configuration
 The role automatically detects CPU architecture:
 - `x86_64` → `amd64`
 - `aarch64` → `arm64`
+
+Security
+--------
+
+**⚠️ Important: Secret Management**
+
+The `CLOUDFLARE_DNS_API_TOKEN` variable contains sensitive credentials that should never be exposed in plain text or committed to version control. Always use secure secret management practices:
+
+- **Ansible Vault**: Encrypt the token using `ansible-vault` by creating a vault.yml file and adding the `vault_CLOUDFLARE_DNS_API_TOKEN` in there.
+
+- **External Secret Managers**: Use HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, etc.
+
+- **Environment Variables**: Set the token via environment variables on the target system
+
+- **Git Exclusion**: Ensure tokens are never committed to git repositories
+
+Example using Ansible Vault:
+```yaml
+traefik_certificate_resolvers:
+  cloudflare:
+    email: "email@example.com"
+    CLOUDFLARE_DNS_API_TOKEN: {{ vault_CLOUDFLARE_DNS_API_TOKEN }}
+```
 
 Dependencies
 ------------
