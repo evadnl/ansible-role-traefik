@@ -28,6 +28,7 @@
   loop:
     - "{{ traefik_home_dir }}"
     - "{{ traefik_config_dir }}"
+    - "{{ traefik_certs_dir }}"
     - "{{ traefik_data_dir }}"
     - "{{ traefik_log_dir }}"
 
@@ -112,19 +113,11 @@
 
 - name: Create dashboard service configuration
   template:
-    src: service.yaml.j2
+    src: dashboard.yaml.j2
     dest: "{{ traefik_provider_file_directory }}/dashboard.yaml"
     owner: "{{ traefik_user }}"
     group: "{{ traefik_group }}"
     mode: '0644'
-  vars:
-    service_config:
-      routers:
-        dashboard:
-          rule: "Host(`{{ traefik_api_dashboard_hostname if traefik_api_dashboard_hostname != '' else ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0]) }}`)"
-          service: "api@internal"
-          entrypoints: "{{ ['http'] if (traefik_api_insecure or traefik_api_dashboard_hostname == '') else ['https'] }}"
-          tls: "{{ {'certResolver': 'cloudflare'} if (not traefik_api_insecure and traefik_api_dashboard_hostname != '') else omit }}"
   notify: restart traefik
   when:
     - traefik_provider_file_enabled

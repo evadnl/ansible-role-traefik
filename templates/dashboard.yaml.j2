@@ -1,0 +1,32 @@
+http:
+  routers:
+{% if not traefik_api_insecure and traefik_api_dashboard_hostname != '' %}
+    # HTTP router for redirect to HTTPS
+    dashboard-redirect:
+      rule: "Host(`{{ traefik_api_dashboard_hostname }}`)"
+      service: "api@internal"
+      entrypoints: ["http"]
+      middlewares: ["dashboard-redirect-to-https"]
+    
+    # HTTPS router for dashboard
+    dashboard:
+      rule: "Host(`{{ traefik_api_dashboard_hostname }}`)"
+      service: "api@internal"
+      entrypoints: ["https"]
+      tls:
+        certResolver: "cloudflare"
+{% else %}
+    # Insecure HTTP router or IP-based access
+    dashboard:
+      rule: "Host(`{{ traefik_api_dashboard_hostname if traefik_api_dashboard_hostname != '' else ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0]) }}`)"
+      service: "api@internal"
+      entrypoints: ["http"]
+{% endif %}
+
+{% if not traefik_api_insecure and traefik_api_dashboard_hostname != '' %}
+  middlewares:
+    dashboard-redirect-to-https:
+      redirectScheme:
+        scheme: "https"
+        permanent: true
+{% endif %}

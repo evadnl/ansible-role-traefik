@@ -8,6 +8,7 @@ traefik_user: "traefik"
 traefik_group: "traefik"
 traefik_home_dir: "/opt/traefik"
 traefik_config_dir: "/etc/traefik"
+traefik_certs_dir: "/etc/traefik/certs"
 traefik_data_dir: "/var/lib/traefik"
 traefik_log_dir: "/var/log/traefik"
 traefik_binary_path: "/usr/local/bin/traefik"
@@ -106,7 +107,8 @@ traefik_certificate_resolvers_enabled: true
 traefik_certificate_resolvers:
   cloudflare:
     email: "email@example.com"
-    storage: "/certs/acme.json"
+    CLOUDFLARE_DNS_API_TOKEN: ""
+    storage: "{{ traefik_certs_dir }}/acme.json"
     ca_server: "https://acme-v02.api.letsencrypt.org/directory"
     dns_challenge:
       provider: "cloudflare"
