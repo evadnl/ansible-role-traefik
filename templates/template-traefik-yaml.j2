@@ -11,14 +11,26 @@ api:
   insecure: {{ traefik_api_insecure | lower }}
 
 entryPoints:
-{% if traefik_entrypoint_web_enabled %}
-  web:
-    address: ":{{ traefik_entrypoint_web_port }}"
+{% if traefik_entrypoint_http_enabled %}
+  http:
+    address: ":{{ traefik_entrypoint_http_port }}"
 {% endif %}
-{% if traefik_entrypoint_websecure_enabled %}
-  websecure:
-    address: ":{{ traefik_entrypoint_websecure_port }}"
+{% if traefik_entrypoint_https_enabled %}
+  https:
+    address: ":{{ traefik_entrypoint_https_port }}"
 {% endif %}
+{% for entrypoint_name, entrypoint_config in traefik_custom_entrypoints.items() %}
+  {{ entrypoint_name }}:
+    address: "{{ entrypoint_config.address }}"
+{% if entrypoint_config.transport is defined %}
+    transport:
+{{ entrypoint_config.transport | to_nice_yaml | indent(6, true) }}
+{% endif %}
+{% if entrypoint_config.http is defined %}
+    http:
+{{ entrypoint_config.http | to_nice_yaml | indent(6, true) }}
+{% endif %}
+{% endfor %}
 
 providers:
 {% if traefik_provider_docker_enabled %}

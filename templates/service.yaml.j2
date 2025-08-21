@@ -1,0 +1,83 @@
+{% if service_config.routers is defined %}
+http:
+  routers:
+{% for router_name, router_config in service_config.routers.items() %}
+    {{ router_name }}:
+      rule: "{{ router_config.rule }}"
+      service: "{{ router_config.service }}"
+{% if router_config.entrypoints is defined %}
+      entrypoints:
+{% for entrypoint in router_config.entrypoints %}
+        - "{{ entrypoint }}"
+{% endfor %}
+{% endif %}
+{% if router_config.middlewares is defined %}
+      middlewares:
+{% for middleware in router_config.middlewares %}
+        - "{{ middleware }}"
+{% endfor %}
+{% endif %}
+{% if router_config.tls is defined %}
+      tls:
+{% if router_config.tls.certResolver is defined %}
+        certResolver: "{{ router_config.tls.certResolver }}"
+{% endif %}
+{% if router_config.tls.domains is defined %}
+        domains:
+{% for domain in router_config.tls.domains %}
+          - main: "{{ domain.main }}"
+{% if domain.sans is defined %}
+            sans:
+{% for san in domain.sans %}
+              - "{{ san }}"
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% endif %}
+{% if service_config.services is defined %}
+  services:
+{% for service_name, service_data in service_config.services.items() %}
+    {{ service_name }}:
+{% if service_data.loadBalancer is defined %}
+      loadBalancer:
+{% if service_data.loadBalancer.servers is defined %}
+        servers:
+{% for server in service_data.loadBalancer.servers %}
+          - url: "{{ server.url }}"
+{% if server.weight is defined %}
+            weight: {{ server.weight }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if service_data.loadBalancer.healthCheck is defined %}
+        healthCheck:
+{% if service_data.loadBalancer.healthCheck.path is defined %}
+          path: "{{ service_data.loadBalancer.healthCheck.path }}"
+{% endif %}
+{% if service_data.loadBalancer.healthCheck.interval is defined %}
+          interval: "{{ service_data.loadBalancer.healthCheck.interval }}"
+{% endif %}
+{% if service_data.loadBalancer.healthCheck.timeout is defined %}
+          timeout: "{{ service_data.loadBalancer.healthCheck.timeout }}"
+{% endif %}
+{% endif %}
+{% if service_data.loadBalancer.sticky is defined %}
+        sticky:
+          cookie:
+            name: "{{ service_data.loadBalancer.sticky.cookie.name | default('lb') }}"
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% endif %}
+{% if service_config.middlewares is defined %}
+  middlewares:
+{% for middleware_name, middleware_config in service_config.middlewares.items() %}
+    {{ middleware_name }}:
+{{ middleware_config | to_nice_yaml | indent(6, true) }}
+{% endfor %}
+{% endif %}

@@ -81,6 +81,59 @@
     mode: '0644'
   notify: restart traefik
 
+- name: Create traefik file provider directory
+  file:
+    path: "{{ traefik_provider_file_directory }}"
+    state: directory
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0755'
+  when: traefik_provider_file_enabled
+
+- name: Create service configuration files
+  template:
+    src: service.yaml.j2
+    dest: "{{ traefik_provider_file_directory }}/{{ service_name }}.yaml"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0644'
+  vars:
+    service_config: "{{ service_data }}"
+  loop: "{{ traefik_services | dict2items }}"
+  loop_control:
+    loop_var: service_item
+    label: "{{ service_item.key }}"
+  vars:
+    service_name: "{{ service_item.key }}"
+    service_data: "{{ service_item.value }}"
+  notify: restart traefik
+  when: 
+    - traefik_provider_file_enabled
+    - traefik_services | length > 0
+
+- name: Create dashboard service configuration
+  template:
+    src: service.yaml.j2
+    dest: "{{ traefik_provider_file_directory }}/dashboard.yaml"
+    owner: "{{ traefik_user }}"
+    group: "{{ traefik_group }}"
+    mode: '0644'
+  vars:
+    service_config:
+      routers:
+        dashboard:
+          rule: "Host(`{{ traefik_api_dashboard_hostname if traefik_api_dashboard_hostname != '' else ansible_default_ipv4.address | default(ansible_all_ipv4_addresses[0]) }}`)"
+          service: "api@internal"
+          entrypoints: "{{ ['http'] if (traefik_api_insecure or traefik_api_dashboard_hostname == '') else ['https'] }}"
+          {% if not traefik_api_insecure and traefik_api_dashboard_hostname != '' %}
+          tls:
+            certResolver: "cloudflare"
+          {% endif %}
+  notify: restart traefik
+  when: 
+    - traefik_provider_file_enabled
+    - traefik_api_dashboard
+
 - name: Create traefik systemd service file
   template:
     src: traefik.service.j2

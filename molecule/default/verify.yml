@@ -127,27 +127,27 @@
         - traefik_api_insecure | default(true) | bool
       ignore_errors: true
 
-    - name: Verify traefik is listening on web entrypoint
+    - name: Verify traefik is listening on http entrypoint
       wait_for:
         port: 80
         host: "0.0.0.0"
         timeout: 10
       ignore_errors: true
-      register: web_port_check
+      register: http_port_check
 
-    - name: Verify traefik is listening on websecure entrypoint
+    - name: Verify traefik is listening on https entrypoint
       wait_for:
         port: 443
         host: "0.0.0.0"
         timeout: 10
       ignore_errors: true
-      register: websecure_port_check
+      register: https_port_check
 
     - name: Display connectivity test results
       debug:
         msg:
           - "API Port (8080): {{ 'PASS' if api_port_check is succeeded else 'FAIL' }}"
-          - "Web Port (80): {{ 'PASS' if web_port_check is succeeded else 'FAIL' }}"
-          - "WebSecure Port (443): {{ 'PASS' if websecure_port_check is succeeded else 'FAIL' }}"
+          - "HTTP Port (80): {{ 'PASS' if http_port_check is succeeded else 'FAIL' }}"
+          - "HTTPS Port (443): {{ 'PASS' if https_port_check is succeeded else 'FAIL' }}"
           - "API Dashboard: {{ 'PASS' if api_response is succeeded else 'SKIP' if not (traefik_api_insecure | default(true) | bool) else 'FAIL' }}"
           - "Dashboard Web Interface: {{ 'PASS' if dashboard_response is succeeded else 'SKIP' if not (traefik_api_insecure | default(true) | bool) else 'FAIL' }}"
