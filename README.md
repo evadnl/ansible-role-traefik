@@ -38,12 +38,33 @@ traefik_log_level: "WARN"                   # Log level (DEBUG, INFO, WARN, ERRO
 
 traefik_api_dashboard: true                  # Enable web dashboard
 traefik_api_insecure: true                   # Allow insecure dashboard access
+traefik_api_dashboard_hostname: ""           # Custom hostname for dashboard (empty = use raw IP, no TLS)
 
 # EntryPoints configuration
-traefik_entrypoint_web_enabled: true        # Enable HTTP entrypoint
-traefik_entrypoint_web_port: 80             # HTTP port
-traefik_entrypoint_websecure_enabled: true  # Enable HTTPS entrypoint
-traefik_entrypoint_websecure_port: 443      # HTTPS port
+traefik_entrypoint_http_enabled: true       # Enable HTTP entrypoint
+traefik_entrypoint_http_port: 80            # HTTP port
+traefik_entrypoint_https_enabled: true      # Enable HTTPS entrypoint
+traefik_entrypoint_https_port: 443         # HTTPS port
+
+# Custom EntryPoints
+traefik_custom_entrypoints: {}              # Define custom entrypoints
+# Example:
+# traefik_custom_entrypoints:
+#   ssh:
+#     address: ":2222"
+#   mqtt:
+#     address: ":1883"
+#   custom_web:
+#     address: ":8080"
+#     transport:
+#       respondingTimeouts:
+#         readTimeout: "60s"
+#     http:
+#       healthcheck: "/health"
+#   grpc:
+#     address: ":9090"
+#     http:
+#       healthcheck: "/grpc.health.v1.Health/Check"
 
 # Provider configuration
 traefik_provider_docker_enabled: true       # Enable Docker provider
@@ -54,6 +75,47 @@ traefik_provider_docker_endpoint: "unix:///var/run/docker.sock" # Docker socket
 traefik_provider_file_enabled: true         # Enable file provider
 traefik_provider_file_directory: "/etc/traefik/conf/" # File provider directory
 traefik_provider_file_watch: true           # Watch file provider directory
+
+# Services configuration (creates separate files per service)
+traefik_services: {}                        # Define services, routers, and middlewares
+# Example:
+# traefik_services:
+#   api:
+#     routers:
+#       api:
+#         rule: "Host(`api.example.com`)"
+#         service: "api"
+#         entrypoints: ["https"]
+#         tls:
+#           certResolver: "cloudflare"
+#     services:
+#       api:
+#         loadBalancer:
+#           servers:
+#             - url: "http://192.168.1.100:3000"
+#             - url: "http://192.168.1.101:3000"
+#           healthCheck:
+#             path: "/health"
+#             interval: "10s"
+#   web:
+#     routers:
+#       web:
+#         rule: "Host(`example.com`) || Host(`www.example.com`)"
+#         service: "web"
+#         entrypoints: ["http", "https"]
+#         middlewares: ["redirect-to-https"]
+#         tls:
+#           certResolver: "cloudflare"
+#     services:
+#       web:
+#         loadBalancer:
+#           servers:
+#             - url: "http://192.168.1.200:80"
+#     middlewares:
+#       redirect-to-https:
+#         redirectScheme:
+#           scheme: "https"
+#           permanent: true
 
 # Certificate resolvers
 traefik_certificate_resolvers_enabled: true # Enable certificate resolvers
