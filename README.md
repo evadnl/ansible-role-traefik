@@ -82,6 +82,7 @@ traefik_services: {}                        # Define services, routers, and midd
 # Example:
 # traefik_services:
 #   api:
+#     protocol: "http"                      # Protocol: "http" (default) or "tcp"
 #     routers:
 #       api:
 #         rule: "Host(`api.example.com`)"
@@ -99,6 +100,7 @@ traefik_services: {}                        # Define services, routers, and midd
 #             path: "/health"
 #             interval: "10s"
 #   web:
+#     protocol: "http"                      # HTTP routing (default if not specified)
 #     routers:
 #       web:
 #         rule: "Host(`example.com`) || Host(`www.example.com`)"
@@ -117,6 +119,20 @@ traefik_services: {}                        # Define services, routers, and midd
 #         redirectScheme:
 #           scheme: "https"
 #           permanent: true
+#   tcp-service:
+#     protocol: "tcp"                       # TCP routing
+#     routers:
+#       tcp-router:
+#         rule: "HostSNI(`tcp.example.com`)"
+#         service: "tcp-backend"
+#         entrypoints: ["tcp-port"]
+#         tls: {}                           # Enable TLS passthrough
+#     services:
+#       tcp-backend:
+#         loadBalancer:
+#           servers:
+#             - address: "192.168.1.100:3306"  # Use address for TCP services
+#             - address: "192.168.1.101:3306"
 
 # Certificate resolvers
 traefik_certificate_resolvers_enabled: true # Enable certificate resolvers

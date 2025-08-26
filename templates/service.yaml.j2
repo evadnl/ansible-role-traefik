@@ -1,5 +1,9 @@
 {% if service_config.routers is defined %}
+{% if service_config.protocol is defined and service_config.protocol == 'tcp' %}
+tcp:
+{% else %}
 http:
+{% endif %}
   routers:
 {% for router_name, router_config in service_config.routers.items() %}
     {{ router_name }}:
@@ -21,6 +25,18 @@ http:
       tls:
 {% if router_config.tls.certResolver is defined %}
         certResolver: "{{ router_config.tls.certResolver }}"
+{% endif %}
+{% if router_config.tls.options is defined %}
+        options: "{{ router_config.tls.options }}"
+{% endif %}
+{% if router_config.tls.passthrough is defined %}
+        passthrough: {{ router_config.tls.passthrough | lower }}
+{% endif %}
+{% if router_config.tls.stores is defined %}
+        stores:
+{% for store in router_config.tls.stores %}
+          - "{{ store }}"
+{% endfor %}
 {% endif %}
 {% if router_config.tls.domains is defined %}
         domains:
@@ -47,22 +63,30 @@ http:
 {% if service_data.loadBalancer.servers is defined %}
         servers:
 {% for server in service_data.loadBalancer.servers %}
+{% if server.url is defined %}
           - url: "{{ server.url }}"
+{% else %}
+          - address: "{{ server.address }}"
+{% endif %}
 {% if server.weight is defined %}
             weight: {{ server.weight }}
 {% endif %}
 {% endfor %}
 {% endif %}
-{% if service_data.loadBalancer.healthCheck is defined %}
+{% if service_data.loadBalancer.healthCheck is defined or service_data.loadBalancer.healthcheck is defined %}
         healthCheck:
-{% if service_data.loadBalancer.healthCheck.path is defined %}
-          path: "{{ service_data.loadBalancer.healthCheck.path }}"
+{% set healthcheck_config = service_data.loadBalancer.healthCheck | default(service_data.loadBalancer.healthcheck) %}
+{% if healthcheck_config.path is defined %}
+          path: "{{ healthcheck_config.path }}"
 {% endif %}
-{% if service_data.loadBalancer.healthCheck.interval is defined %}
-          interval: "{{ service_data.loadBalancer.healthCheck.interval }}"
+{% if healthcheck_config.protocol is defined %}
+          protocol: {{ healthcheck_config.protocol }}
 {% endif %}
-{% if service_data.loadBalancer.healthCheck.timeout is defined %}
-          timeout: "{{ service_data.loadBalancer.healthCheck.timeout }}"
+{% if healthcheck_config.interval is defined %}
+          interval: "{{ healthcheck_config.interval }}"
+{% endif %}
+{% if healthcheck_config.timeout is defined %}
+          timeout: "{{ healthcheck_config.timeout }}"
 {% endif %}
 {% endif %}
 {% if service_data.loadBalancer.sticky is defined %}
